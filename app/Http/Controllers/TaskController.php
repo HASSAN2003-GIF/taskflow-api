@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\TaskList;
+use Illuminate\Http\Request;
+
+class TaskController extends Controller
+{
+    public function store(Request $request, $list_id)
+    {
+        // 1. Validate payload
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        // 2. Fetch the list (and eager load the board to get the workspace_id)
+        $list = TaskList::with('board')->findOrFail($list_id);
+        $workspaceId = $list->board->workspace_id;
+
+        // 3. SECURITY CHECK: Does user belong to this workspace?
+        $user = $request->user();
+        $isMember = $user->workspaces()->where('workspace_id', $workspaceId)->exists();
+
+        if (! $isMember) {
+            return response()->json([
+                'message' => 'Forbidden. You do not have access to this list.'
+            ], 403);
+        }
+
+        // 4. Create the Task (Passing the workspace_id for our denormalized architecture)
+        $task = $list->tasks()->create([
+            'workspace_id' => $workspaceId,
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'position' => 0,
+        ]);
+
+        return response()->json([
+            'message' => 'Task created successfully',
+            'task' => $task
+        ], 201);
+    }
+}

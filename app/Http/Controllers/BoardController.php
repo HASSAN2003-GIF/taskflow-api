@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Board;
+use Illuminate\Http\Request;
+
+class BoardController extends Controller
+{
+    // Create a new Board inside a specific Workspace
+    public function store(Request $request, $workspace_id)
+    {
+        // 1. Validate the payload
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $user = $request->user();
+
+        // 2. SECURITY CHECK: Does this user belong to this workspace?
+        // We query the user's workspaces to see if the ID matches the URL parameter.
+        $isMember = $user->workspaces()->where('workspace_id', $workspace_id)->exists();
+
+        if (! $isMember) {
+            return response()->json([
+                'message' => 'Forbidden. You do not have access to this workspace.'
+            ], 403);
+        }
+
+        // 3. Create the board
+        $board = Board::create([
+            'workspace_id' => $workspace_id,
+            'name' => $validated['name'],
+            'status' => 'active',
+        ]);
+
+        return response()->json([
+            'message' => 'Board created successfully',
+            'board' => $board
+        ], 201);
+    }
+}
