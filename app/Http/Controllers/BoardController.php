@@ -60,4 +60,14 @@ class BoardController extends Controller
             'board' => $board
         ], 200);
     }
+
+    public function index(Request $request)
+    {
+        // Fetch all workspaces this specific user belongs to, including their boards
+        $workspaces = $request->user()->workspaces()->with('boards')->get();
+        
+        return response()->json([
+            'workspaces' => $workspaces
+        ], 200);
+    }
 }

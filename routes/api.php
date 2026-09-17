@@ -30,4 +30,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Move a task
     Route::patch('/tasks/{task_id}/move', [TaskController::class, 'move']);
 
+    // Fetch all user workspaces and boards
+    Route::get('/workspaces', [WorkspaceController::class, 'index']);
+
+    Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
+
 });

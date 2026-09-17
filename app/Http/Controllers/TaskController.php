@@ -72,4 +72,20 @@ class TaskController extends Controller
             'task' => $task
         ], 200);
     }
+
+    public function destroy(Request $request, $id)
+    {
+        $task = \App\Models\Task::findOrFail($id);
+        
+        // Security: Verify the user belongs to the workspace that owns this task
+        $hasAccess = $request->user()->workspaces()->where('workspace_id', $task->workspace_id)->exists();
+        
+        if (!$hasAccess) {
+            return response()->json(['message' => 'Unauthorized access to workspace.'], 403);
+        }
+
+        $task->delete();
+
+        return response()->json(['message' => 'Task deleted successfully'], 200);
+    }
 }
