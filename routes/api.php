@@ -21,4 +21,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/lists/{list_id}/tasks', [TaskController::class, 'store']);
 
+    // Nested Route: Create a board inside a workspace
+    Route::post('/workspaces/{workspace_id}/boards', [BoardController::class, 'store']);
+    
+    // Fetch a single board (Shallow nested)
+    Route::get('/boards/{board_id}', [BoardController::class, 'show']);
+
+    // Move a task
+    Route::patch('/tasks/{task_id}/move', [TaskController::class, 'move']);
+
 });

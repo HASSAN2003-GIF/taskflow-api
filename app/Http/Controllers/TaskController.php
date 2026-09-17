@@ -42,4 +42,34 @@ class TaskController extends Controller
             'task' => $task
         ], 201);
     }
+
+    public function move(Request $request, $task_id)
+    {
+        $validated = $request->validate([
+            'task_list_id' => 'required|exists:task_lists,id',
+            'position' => 'required|integer',
+        ]);
+
+        // 1. Fetch the task
+        $task = \App\Models\Task::findOrFail($task_id);
+
+        // 2. SECURITY CHECK: Ensure the user belongs to the task's workspace
+        $user = $request->user();
+        $isMember = $user->workspaces()->where('workspace_id', $task->workspace_id)->exists();
+
+        if (! $isMember) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        // 3. Update the task's location and order
+        $task->update([
+            'task_list_id' => $validated['task_list_id'],
+            'position' => $validated['position'],
+        ]);
+
+        return response()->json([
+            'message' => 'Task moved successfully',
+            'task' => $task
+        ], 200);
+    }
 }

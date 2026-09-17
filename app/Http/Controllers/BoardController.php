@@ -31,12 +31,33 @@ class BoardController extends Controller
         $board = Board::create([
             'workspace_id' => $workspace_id,
             'name' => $validated['name'],
-            'status' => 'active',
+            ' status' => 'active',
         ]);
 
         return response()->json([
             'message' => 'Board created successfully',
             'board' => $board
         ], 201);
+    }
+
+    // Fetch a single board and all its nested data
+    public function show(Request $request, $board_id)
+    {
+        // 1. Fetch the board AND eagerly load its lists and tasks
+        $board = Board::with(['lists.tasks'])->findOrFail($board_id);
+
+        // 2. SECURITY CHECK
+        $user = $request->user();
+        $isMember = $user->workspaces()->where('workspace_id', $board->workspace_id)->exists();
+
+        if (! $isMember) {
+            return response()->json([
+                'message' => 'Forbidden. You do not have access to this board.'
+            ], 403);
+        }
+
+        return response()->json([
+            'board' => $board
+        ], 200);
     }
 }
